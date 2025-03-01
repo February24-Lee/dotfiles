@@ -61,7 +61,7 @@ fi
 # Step 4: Install essential packages
 echo "📦 Installing essential packages..."
 if [[ "$PKG_MANAGER" == "brew" ]]; then
-    brew install git vim autojump fzf ripgrep
+    brew install git vim fzf ripgrep
 elif [[ "$PKG_MANAGER" == "apt" ]]; then
     sudo apt update && sudo apt install -y git vim fzf ripgrep
 elif [[ "$PKG_MANAGER" == "yum" || "$PKG_MANAGER" == "dnf" ]]; then
@@ -85,14 +85,7 @@ else
     echo "✅ Powerlevel10k is already installed."
 fi
 
-# Step 7: Set Powerlevel10k theme in ~/.zshrc
-if ! grep -q 'ZSH_THEME="powerlevel10k/powerlevel10k"' ~/.zshrc; then
-    echo "🎨 Applying Powerlevel10k theme..."
-    sed -i '' 's/^ZSH_THEME=.*/ZSH_THEME="powerlevel10k\/powerlevel10k"/' ~/.zshrc 2>/dev/null || \
-    sed -i 's/^ZSH_THEME=.*/ZSH_THEME="powerlevel10k\/powerlevel10k"/' ~/.zshrc
-fi
-
-# Step 8: Install zsh-autosuggestions plugin
+# Step 7: Install zsh-autosuggestions plugin
 if [ ! -d "$ZSH_CUSTOM/plugins/zsh-autosuggestions" ]; then
     echo "💡 Installing zsh-autosuggestions..."
     git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
@@ -100,41 +93,42 @@ else
     echo "✅ zsh-autosuggestions is already installed."
 fi
 
-# Step 9: Install Vim Plug (for Vim plugins)
-if [ ! -f "$HOME/.vim/autoload/plug.vim" ]; then
-    echo "💡 Installing Vim Plug..."
-    curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
-        https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+# Step 8: Install zsh-syntax-highlighting plugin
+if [ ! -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" ]; then
+    echo "💡 Installing zsh-syntax-highlighting..."
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
 else
-    echo "✅ Vim Plug is already installed."
+    echo "✅ zsh-syntax-highlighting is already installed."
 fi
 
-# Step 10: Create symbolic links for dotfiles
-echo "🔗 Creating symbolic links for dotfiles..."
-ln -sf ~/.dotfiles/.zshrc ~/.zshrc
-ln -sf ~/.dotfiles/.vimrc ~/.vimrc
-
-# Step 11: Set Zsh as the default shell
-if [[ "$SHELL" != "$(which zsh)" ]]; then
-    echo "⚙️ Setting Zsh as the default shell..."
+# Step 9: Install Autojump
+if ! command -v j &>/dev/null; then
+    echo "💡 Installing Autojump..."
     
-    # Ensure Zsh is in /etc/shells before changing the default shell
-    if ! grep -q "$(which zsh)" /etc/shells; then
-        echo "$(which zsh)" | sudo tee -a /etc/shells
+    if [[ "$PKG_MANAGER" == "brew" ]]; then
+        brew install autojump
+    elif [[ "$PKG_MANAGER" == "apt" ]]; then
+        sudo apt install -y autojump
+    elif [[ "$PKG_MANAGER" == "yum" || "$PKG_MANAGER" == "dnf" ]]; then
+        sudo $PKG_MANAGER install -y autojump
     fi
-
-    chsh -s "$(which zsh)"
+else
+    echo "✅ Autojump is already installed."
 fi
 
-# Step 12: Install Powerline Fonts (macOS only)
-if [[ "$OS_TYPE" == "macOS" ]]; then
-    echo "💡 Installing Powerline fonts (MesloLGS NF)..."
-    brew install font-meslo-lg-nerd-font
+# Step 10: Configure ~/.zshrc for Autojump
+if ! grep -q "autojump.sh" ~/.zshrc; then
+    echo "🔧 Configuring Autojump in ~/.zshrc..."
+    echo '[ -f $(brew --prefix)/etc/profile.d/autojump.sh ] && . $(brew --prefix)/etc/profile.d/autojump.sh' >> ~/.zshrc
+    echo 'plugins=(git zsh-autosuggestions zsh-syntax-highlighting autojump)' >> ~/.zshrc
 fi
 
-# Step 13: Apply the new settings
+# Step 11: Apply the new settings
 echo "🚀 Applying new settings..."
 source ~/.zshrc
 
+# Step 12: Restart shell session for Autojump to work properly
+echo "🔄 Restarting Zsh session..."
+exec zsh
+
 echo "✅ Setup complete! 🎉"
-echo "🔔 Run 'p10k configure' to customize your Powerlevel10k prompt."

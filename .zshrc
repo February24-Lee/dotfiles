@@ -36,3 +36,29 @@ if [[ ! -f ~/.p10k.zsh ]]; then
     echo "🚀 Powerlevel10k is installed but not configured!"
     echo "🔧 Run 'p10k configure' to customize your prompt."
 fi
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+# export PATH="$HOME/miniconda/bin:$PATH"  # commented out by conda initialize
+plugins=(git zsh-autosuggestions zsh-syntax-highlighting autojump)
+source $ZSH_CUSTOM/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+[ -f $(brew --prefix)/etc/profile.d/autojump.sh ] && . $(brew --prefix)/etc/profile.d/autojump.sh
+plugins=(git zsh-autosuggestions zsh-syntax-highlighting autojump)
+
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$('/Users/donaldlee/miniconda/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "/Users/donaldlee/miniconda/etc/profile.d/conda.sh" ]; then
+        . "/Users/donaldlee/miniconda/etc/profile.d/conda.sh"
+    else
+        export PATH="/Users/donaldlee/miniconda/bin:$PATH"
+    fi
+fi
+unset __conda_setup
+# <<< conda initialize <<<
+
