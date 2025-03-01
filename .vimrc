@@ -1,5 +1,5 @@
 set number
-set relativenumber number
+set relativenumber
 set tabstop=4
 set shiftwidth=4
 set expandtab
@@ -7,12 +7,14 @@ set ignorecase
 set smartcase
 set nocompatible
 set hidden
-set nocp
-set ignorecase smartcase
 set wrapscan
 filetype plugin on
-set rtp+=/opt/homebrew/opt/fzf
 syntax on
+
+" macOS(Homebrew)에서만 fzf 경로 추가
+if system("uname") =~ "Darwin" && system("command -v brew") != ""
+    set rtp+=/opt/homebrew/opt/fzf
+endif
 
 call plug#begin()
 Plug 'junegunn/fzf.vim'

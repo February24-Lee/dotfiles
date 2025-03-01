@@ -1,6 +1,4 @@
-# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
-# Initialization code that may require console input (password prompts, [y/n]
-# confirmations, etc.) must go above this block; everything else may go below.
+# Enable Powerlevel10k instant prompt (must be at the top)
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
@@ -17,12 +15,21 @@ source $ZSH/oh-my-zsh.sh
 # Ensure Powerlevel10k settings are loaded
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-# Plugins
-plugins=(git zsh-autosuggestions autojump)
+# Plugins (Avoid duplicate entries)
+plugins=(git zsh-autosuggestions zsh-syntax-highlighting autojump)
+
+# Load plugins
+source $ZSH_CUSTOM/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 # Homebrew auto-detect for macOS/Linux
 if command -v brew &>/dev/null; then
     eval "$(brew shellenv)"
+    # Autojump for Homebrew installations
+    [ -f "$(brew --prefix)/etc/profile.d/autojump.sh" ] && . "$(brew --prefix)/etc/profile.d/autojump.sh"
+elif [ -f "/usr/share/autojump/autojump.sh" ]; then
+    . "/usr/share/autojump/autojump.sh"
+elif [ -f "/etc/profile.d/autojump.sh" ]; then
+    . "/etc/profile.d/autojump.sh"
 fi
 
 # fzf integration (if installed)
@@ -31,34 +38,29 @@ if command -v rg &>/dev/null; then
     export FZF_DEFAULT_OPTS='-m'
 fi
 
-# If Powerlevel10k config is missing, run configuration wizard
+# If Powerlevel10k config is missing, remind user
 if [[ ! -f ~/.p10k.zsh ]]; then
     echo "🚀 Powerlevel10k is installed but not configured!"
     echo "🔧 Run 'p10k configure' to customize your prompt."
 fi
 
+# Node.js (NVM) settings
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
-# export PATH="$HOME/miniconda/bin:$PATH"  # commented out by conda initialize
-plugins=(git zsh-autosuggestions zsh-syntax-highlighting autojump)
-source $ZSH_CUSTOM/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-[ -f $(brew --prefix)/etc/profile.d/autojump.sh ] && . $(brew --prefix)/etc/profile.d/autojump.sh
-plugins=(git zsh-autosuggestions zsh-syntax-highlighting autojump)
-
+# Conda settings
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('/Users/donaldlee/miniconda/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+__conda_setup="$('$HOME/miniconda/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
 if [ $? -eq 0 ]; then
     eval "$__conda_setup"
 else
-    if [ -f "/Users/donaldlee/miniconda/etc/profile.d/conda.sh" ]; then
-        . "/Users/donaldlee/miniconda/etc/profile.d/conda.sh"
+    if [ -f "$HOME/miniconda/etc/profile.d/conda.sh" ]; then
+        . "$HOME/miniconda/etc/profile.d/conda.sh"
     else
-        export PATH="/Users/donaldlee/miniconda/bin:$PATH"
+        export PATH="$HOME/miniconda/bin:$PATH"
     fi
 fi
 unset __conda_setup
 # <<< conda initialize <<<
-
