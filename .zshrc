@@ -9,17 +9,13 @@ export ZSH="$HOME/.oh-my-zsh"
 # Use Powerlevel10k as the theme
 ZSH_THEME="powerlevel10k/powerlevel10k"
 
-# Load Oh My Zsh
+# Plugins (Avoid duplicate entries)
+plugins=(git zsh-autosuggestions zsh-syntax-highlighting autojump)
+
 source $ZSH/oh-my-zsh.sh
 
 # Ensure Powerlevel10k settings are loaded
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-
-# Plugins (Avoid duplicate entries)
-plugins=(git zsh-autosuggestions zsh-syntax-highlighting autojump)
-
-# Load plugins
-source $ZSH_CUSTOM/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 # Homebrew auto-detect for macOS/Linux
 if command -v brew &>/dev/null; then
@@ -63,4 +59,3 @@ else
     fi
 fi
 unset __conda_setup
-# <<< conda initialize <<<
