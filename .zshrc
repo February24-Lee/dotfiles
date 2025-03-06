@@ -59,3 +59,6 @@ else
     fi
 fi
 unset __conda_setup
+
+autoload -U compinit
+compinit -i

@@ -99,14 +99,14 @@ else
 fi
 
 # Step 8: Ensure Neovim config directory exists
-if [ ! -d "$HOME/.config/nvim" ]; then
+if [ ! -d "$HOME/.config/" ]; then
     echo "📁 Creating Neovim config directory..."
-    mkdir -p "$HOME/.config/nvim"
+    mkdir -p "$HOME/.config/"
 fi
 
 # Step 9: Link Neovim config file
 echo "🔗 Linking Neovim config file..."
-ln -sf "$HOME/.dotfiles/.config/nvim/init.lua" "$HOME/.config/nvim/init.lua"
+ln -sf "$HOME/.dotfiles/.config/nvim/" "$HOME/.config/nvim"
 
 # Step 10: Ensure Lazy.nvim is installed
 LAZY_NVM_DIR="$HOME/.local/share/nvim/lazy/lazy.nvim"

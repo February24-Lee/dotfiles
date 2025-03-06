@@ -14,7 +14,6 @@ vim.opt.syntax = "on"              -- Enable syntax highlighting
 vim.cmd [[
     highlight Normal guibg=NONE ctermbg=NONE
     highlight NonText guibg=NONE ctermbg=NONE
-    highlight LineNr guibg=NONE ctermbg=NONE
     highlight Folded guibg=NONE ctermbg=NONE
     highlight EndOfBuffer guibg=NONE ctermbg=NONE
 ]]
@@ -65,10 +64,16 @@ require("lazy").setup({
 })
 
 -- 🌟 Mason & LSP auto setup
-require("mason").setup()
-require("mason-lspconfig").setup({
-    ensure_installed = { "pyright" },  -- Install Pyright automatically
-    automatic_installation = true,
+-- 🌟 Linter & Formatter 
+require("user.mason")
+require("user.lsp")
+require("user.null-ls")
+
+vim.api.nvim_create_autocmd("BufWritePre", {
+  pattern = "*.py",
+  callback = function()
+    vim.lsp.buf.format({ async = false })
+  end,
 })
 
 local lspconfig = require("lspconfig")
@@ -105,29 +110,11 @@ cmp.setup({
     },
 })
 
--- 🌟 Linter & Formatter 
-local null_ls = require("null-ls")
-null_ls.setup({
-    sources = {
-        null_ls.builtins.diagnostics.flake8,  -- Linter (syntax checking, unused imports)
-        null_ls.builtins.formatting.black,    -- Formatter (PEP8 auto-formatting)
-        null_ls.builtins.formatting.isort,    -- Formatter (auto-sort imports)
-    },
-})
 
 -- 🌟 Virtual Environment Selector
 require("venv-selector").setup({
-    -- Automatically find virtual environments in workspace
-    parents = 2,  -- Search up to 2 parent directories for virtualenvs
-    name = { "venv", ".venv", "env", "pyenv" },  -- Search for these names
-    fd_binary_name = "fd",  -- Ensure 'fd' is used for searching
-    search_paths = {
-        os.getenv("CONDA_PREFIX"),                 -- Currently active Conda environment
-        os.getenv("HOME") .. "/miniconda3/envs",   -- Miniconda environments path
-        os.getenv("HOME") .. "/.conda/envs",       -- Alternative Conda path
+    settings = {
     },
-    anaconda_base_path = os.getenv("HOME") .. "/miniconda3/envs",  -- Conda environments path
-    enable_debug = true,  -- Set to true if you want to debug
 })
 vim.api.nvim_set_keymap("n", "<Leader>vs", ":VenvSelect<CR>", { noremap = true, silent = true })
 
