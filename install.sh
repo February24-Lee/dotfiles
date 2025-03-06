@@ -51,13 +51,17 @@ fi
 # Step 3: Install essential packages (macOS & Linux)
 echo "📦 Installing essential packages..."
 if [[ "$PKG_MANAGER" == "brew" ]]; then
-    brew install git vim fzf ripgrep
+    brew install git vim fzf ripgrep fd
 elif [[ "$PKG_MANAGER" == "apt" ]]; then
-    sudo apt update && sudo apt install -y git vim fzf ripgrep
+    sudo apt update && sudo apt install -y git vim fzf ripgrep fd-find
+    ln -sf $(which fdfind) ~/.local/bin/fd  # Ubuntu에서는 fdfind로 설치되므로 fd로 링크
 elif [[ "$PKG_MANAGER" == "yum" || "$PKG_MANAGER" == "dnf" ]]; then
-    sudo $PKG_MANAGER install -y git vim fzf ripgrep
+    sudo $PKG_MANAGER install -y git vim fzf ripgrep fd-find
+elif [[ "$PKG_MANAGER" == "pacman" ]]; then
+    sudo pacman -S --noconfirm git vim fzf ripgrep fd
+else
+    echo "❌ Unsupported package manager. Skipping fd installation."
 fi
-
 # Step  Install NVM, Node.js, and npm
 echo "📦 Installing NVM (Node Version Manager)..."
 if [ ! -d "$HOME/.nvm" ]; then
@@ -72,7 +76,8 @@ fi
 echo "📦 Installing latest LTS version of Node.js..."
 nvm install --lts
 nvm use --lts
-nvm alias default lts/*
+nvm alias default 'lts/*' || nvm alias default $(nvm version lts/*)
+
 
 echo "🔍 Checking Node.js and npm versions..."
 node -v
