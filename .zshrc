@@ -45,20 +45,34 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
-# Conda settings
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('$HOME/miniconda/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "$HOME/miniconda/etc/profile.d/conda.sh" ]; then
-        . "$HOME/miniconda/etc/profile.d/conda.sh"
-    else
-        export PATH="$HOME/miniconda/bin:$PATH"
-    fi
+# Conda settings (Use system conda if available, otherwise fallback to a specified path)
+if command -v conda > /dev/null 2>&1; then
+    # If conda is in the PATH, retrieve its base directory
+    CONDA_ROOT="$(conda info --base 2>/dev/null)"
+elif [ -d "$HOME/opt/anaconda3" ]; then
+    # Use $HOME/opt/anaconda3 if it exists
+    CONDA_ROOT="$HOME/opt/anaconda3"
+elif [ -d "$HOME/miniconda" ]; then
+    # Fallback to $HOME/miniconda if none of the above conditions match
+    CONDA_ROOT="$HOME/miniconda"
 fi
-unset __conda_setup
+
+if [ -n "$CONDA_ROOT" ]; then
+    # >>> conda initialize >>>
+    # !! Contents within this block are managed by 'conda init' !!
+    __conda_setup="$("$CONDA_ROOT/bin/conda" "shell.zsh" "hook" 2>/dev/null)"
+    if [ $? -eq 0 ]; then
+        eval "$__conda_setup"
+    else
+        if [ -f "$CONDA_ROOT/etc/profile.d/conda.sh" ]; then
+            . "$CONDA_ROOT/etc/profile.d/conda.sh"
+        else
+            export PATH="$CONDA_ROOT/bin:$PATH"
+        fi
+    fi
+    unset __conda_setup
+    # <<< conda initialize <<<
+fi
 
 autoload -U compinit
 compinit -i
