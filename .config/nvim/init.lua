@@ -113,8 +113,17 @@ cmp.setup({
 
 -- 🌟 Virtual Environment Selector
 require("venv-selector").setup({
-    settings = {
+     -- Automatically find virtual environments in workspace
+    parents = 2,  -- Search up to 2 parent directories for virtualenvs
+    name = { "venv", ".venv", "env", "pyenv" },  -- Search for these names
+    fd_binary_name = "fd",  -- Ensure 'fd' is used for searching
+    search_paths = {
+        os.getenv("CONDA_PREFIX"),                 -- Currently active Conda environment
+        os.getenv("HOME") .. "/miniconda3/envs",   -- Miniconda environments path
+        os.getenv("HOME") .. "/.conda/envs",       -- Alternative Conda path
     },
+    anaconda_base_path = os.getenv("HOME") .. "/miniconda3/envs",  -- Conda environments path
+    enable_debug = true,  -- Set to true if you want to debug
 })
 vim.api.nvim_set_keymap("n", "<Leader>vs", ":VenvSelect<CR>", { noremap = true, silent = true })
 
