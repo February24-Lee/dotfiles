@@ -58,6 +58,22 @@ elif [[ "$PKG_MANAGER" == "yum" || "$PKG_MANAGER" == "dnf" ]]; then
     sudo $PKG_MANAGER install -y git neovim fzf ripgrep ctags autojump
 fi
 
+
+# Step 4: Install the latest Neovim
+echo "🚀 Installing the latest Neovim..."
+if [[ "$PKG_MANAGER" == "brew" ]]; then
+    brew install neovim
+elif [[ "$PKG_MANAGER" == "apt" ]]; then
+    sudo apt remove --purge neovim -y  # Remove old versions
+    curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
+    sudo rm -rf /opt/nvim
+    sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz
+    echo 'export PATH="$PATH:/opt/nvim-linux-x86_64/bin"' >> ~/.zshrc
+    source ~/.zshrc
+elif [[ "$PKG_MANAGER" == "yum" || "$PKG_MANAGER" == "dnf" ]]; then
+    sudo $PKG_MANAGER install -y neovim
+fi
+
 # Step 4: Ensure Neovim is the default editor
 #echo "🔗 Setting up Neovim as default editor..."
 #ln -sf "$(which nvim)" /usr/local/bin/vim
