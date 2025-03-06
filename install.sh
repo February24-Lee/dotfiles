@@ -58,6 +58,27 @@ elif [[ "$PKG_MANAGER" == "yum" || "$PKG_MANAGER" == "dnf" ]]; then
     sudo $PKG_MANAGER install -y git vim fzf ripgrep
 fi
 
+# Step  Install NVM, Node.js, and npm
+echo "📦 Installing NVM (Node Version Manager)..."
+if [ ! -d "$HOME/.nvm" ]; then
+    curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/bash_completion" ] && source "$NVM_DIR/bash_completion"
+else
+    echo "✅ NVM is already installed."
+fi
+
+echo "📦 Installing latest LTS version of Node.js..."
+nvm install --lts
+nvm use --lts
+nvm alias default lts/*
+
+echo "🔍 Checking Node.js and npm versions..."
+node -v
+npm -v
+
+
 # Step 4: Install Oh My Zsh
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
     echo "💡 Installing Oh My Zsh..."
