@@ -120,18 +120,37 @@ cmp.setup({
 
 
 -- 🌟 Virtual Environment Selector
+local home = os.getenv("HOME") or ""
+local conda_root = nil
+
+if vim.fn.executable("conda") == 1 then
+  -- If conda is available in PATH, retrieve its base directory using "conda info --base"
+  local conda_base = vim.fn.system("conda info --base")
+  conda_root = vim.fn.trim(conda_base)
+elseif vim.loop.fs_stat(home .. "/opt/anaconda3") then
+  -- Use $HOME/opt/anaconda3 if it exists
+  conda_root = home .. "/opt/anaconda3"
+elseif vim.loop.fs_stat(home .. "/miniconda") then
+  -- Fallback to $HOME/miniconda if none of the above conditions match
+  conda_root = home .. "/miniconda"
+end
+
+-- Use conda_root/envs as the environments path if conda_root is determined
+local conda_envs_path = conda_root and (conda_root .. "/envs") or nil
+
+-- Virtual Environment Selector configuration
 require("venv-selector").setup({
-     -- Automatically find virtual environments in workspace
+    -- Automatically find virtual environments in workspace
     parents = 2,  -- Search up to 2 parent directories for virtualenvs
-    name = { "venv", ".venv", "env", "pyenv" },  -- Search for these names
+    name = { "venv", ".venv", "env", "pyenv" },  -- Names to search for
     fd_binary_name = "fd",  -- Ensure 'fd' is used for searching
     search_paths = {
-        os.getenv("CONDA_PREFIX"),                 -- Currently active Conda environment
-        os.getenv("HOME") .. "/miniconda3/envs",   -- Miniconda environments path
-        os.getenv("HOME") .. "/.conda/envs",       -- Alternative Conda path
+        os.getenv("CONDA_PREFIX"),         -- Currently active Conda environment (if available)
+        conda_envs_path,                   -- Determined Conda environments path (e.g., $HOME/miniconda/envs or $HOME/opt/anaconda3/envs)
+        home .. "/.conda/envs",            -- Alternative Conda environments path
     },
-    anaconda_base_path = os.getenv("HOME") .. "/miniconda3/envs",  -- Conda environments path
-    enable_debug = true,  -- Set to true if you want to debug
+    anaconda_base_path = conda_envs_path,  -- Conda environments base path
+    enable_debug = true,                   -- Enable debug mode
 })
 vim.api.nvim_set_keymap("n", "<Leader>vs", ":VenvSelect<CR>", { noremap = true, silent = true })
 
