@@ -151,10 +151,12 @@ else
     echo "✅ Autojump is already installed."
 fi
 
-# Step 10: Apply new settings
-echo "🚀 Applying new settings..."
-source ~/.zshrc
-
-# Step 11: Restart shell session
-echo "🔄 Restarting Zsh session..."
-exec zsh
+echo ""
+echo "✅ Base environment setup finished."
+echo ""
+echo "➡️  If you also want to install or update Neovim, run:"
+echo "    ./install_nvim.sh --pkg      # Install via package manager (default)"
+echo "    ./install_nvim.sh --build    # Build from source"
+echo "    ./install_nvim.sh --appimage # Use AppImage binary"
+echo ""
+echo "💡 You can safely skip this step if Neovim is already installed."
