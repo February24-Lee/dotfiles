@@ -32,8 +32,27 @@ vim.opt.rtp:prepend(lazypath)
 require("lazy").setup({
     -- 🌟 LSP & Mason
     "neovim/nvim-lspconfig",
-    "williamboman/mason.nvim",
-    "williamboman/mason-lspconfig.nvim",
+    {
+      "williamboman/mason.nvim",
+      version = "*",
+    },
+    {
+      "williamboman/mason-lspconfig.nvim",
+      version = "*",
+      dependencies = { "neovim/nvim-lspconfig" },
+    },
+    {
+      "nvim-treesitter/nvim-treesitter",
+      build = ":TSUpdate",
+      config = function()
+        require("nvim-treesitter.configs").setup({
+          ensure_installed = { "lua", "python" }, -- 필요 언어 추가
+          auto_install = true,
+          highlight = { enable = true },
+          indent = { enable = true },
+        })
+      end,
+    },
 
     -- 🌟 Auto-completion & Snippets
     "hrsh7th/nvim-cmp",
@@ -41,13 +60,15 @@ require("lazy").setup({
     "L3MON4D3/LuaSnip",
     "saadparwaiz1/cmp_luasnip",
 
-    -- 🌟 Linter & Formatter (null-ls)
-    "jose-elias-alvarez/null-ls.nvim",
+    -- 🌟 Linter & Formatter (none-ls)
+    -- "jose-elias-alvarez/none-ls.nvim",
+    { "nvimtools/none-ls.nvim" },
+    { "jay-babu/mason-null-ls.nvim", dependencies = { "nvimtools/none-ls.nvim", "williamboman/mason.nvim" } },
 
     -- 🌟 Virtual Environment Selector
     {
         "linux-cultist/venv-selector.nvim",
-        branch="regexp",
+        branch="main",
     },
 
     -- 🌟 Navigation & File Search
@@ -61,39 +82,26 @@ require("lazy").setup({
     "nvim-lualine/lualine.nvim",
     "lewis6991/gitsigns.nvim",
     "lukas-reineke/indent-blankline.nvim",
+    "b0o/schemastore.nvim",
 })
 
 -- 🌟 Mason & LSP auto setup
 -- 🌟 Linter & Formatter 
 require("user.mason")
 require("user.lsp")
-require("user.null-ls")
+require("user.none-ls")
 
 vim.api.nvim_create_autocmd("BufWritePre", {
-  pattern = "*.py",
-  callback = function()
-    vim.lsp.buf.format({ async = false })
+  pattern = { "*.py" },
+  callback = function(ev)
+    vim.lsp.buf.format({
+      bufnr = ev.buf,
+      timeout_ms = 4000,
+      filter = function(client)
+        return client.name == "ruff"  
+      end,
+    })
   end,
-})
-
-local lspconfig = require("lspconfig")
-
-local on_attach = function(client, bufnr)
-    local opts = { noremap = true, silent = true, buffer = bufnr }
-    vim.keymap.set("n", "gd", "<cmd>lua vim.lsp.buf.definition()<CR>", opts)  -- Go to definition
-    vim.keymap.set("n", "gr", "<cmd>lua vim.lsp.buf.references()<CR>", opts)  -- Find references
-    vim.keymap.set("n", "K", "<cmd>lua vim.lsp.buf.hover()<CR>", opts)  -- Show documentation
-    vim.keymap.set("n", "<Leader>a", "<cmd>lua vim.lsp.buf.code_action()<CR>", opts)  -- Code action
-    vim.keymap.set("n", "<Leader>rn", "<cmd>lua vim.lsp.buf.rename()<CR>", opts)  -- Rename symbol
-    vim.keymap.set("n", "<Leader>f", "<cmd>lua vim.lsp.buf.format({ async = true })<CR>", opts)  -- Format code
-end
-
-require("mason-lspconfig").setup_handlers({
-    function(server_name)
-        lspconfig[server_name].setup({
-            on_attach = on_attach
-        })
-    end,
 })
 
 -- 🌟 Auto-completion setup (nvim-cmp)

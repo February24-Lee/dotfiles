@@ -1,143 +1,81 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-# 🛠️ Detect operating system
+MODE="pkg" # default
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --pkg) MODE="pkg"; shift ;;
+    --build) MODE="build"; shift ;;
+    --appimage) MODE="appimage"; shift ;;
+    -h|--help)
+      echo "Usage: $0 [--pkg|--build|--appimage]"
+      exit 0 ;;
+    *) echo "Unknown arg: $1"; exit 1 ;;
+  esac
+done
+
 echo "🛠️ Detecting system..."
 OS="$(uname -s)"
-
 case "$OS" in
-    Darwin*)
-        OS_TYPE="macOS"
-        PKG_MANAGER="brew"
-        ;;
-    Linux*)
-        OS_TYPE="Linux"
-        if command -v apt &>/dev/null; then
-            PKG_MANAGER="apt"
-        elif command -v yum &>/dev/null; then
-            PKG_MANAGER="yum"
-        elif command -v dnf &>/dev/null; then
-            PKG_MANAGER="dnf"
-        else
-            echo "❌ Unsupported package manager."
-            exit 1
-        fi
-        ;;
-    *)
-        echo "❌ Unsupported operating system: $OS"
-        exit 1
-        ;;
+  Darwin*) OS_TYPE="macOS"; PKG_MANAGER="brew" ;;
+  Linux*)
+    OS_TYPE="Linux"
+    if command -v apt &>/dev/null; then PKG_MANAGER="apt"
+    elif command -v dnf &>/dev/null; then PKG_MANAGER="dnf"
+    elif command -v yum &>/dev/null; then PKG_MANAGER="yum"
+    elif command -v pacman &>/dev/null; then PKG_MANAGER="pacman"
+    else echo "❌ Unsupported package manager."; exit 1; fi ;;
+  *) echo "❌ Unsupported operating system: $OS"; exit 1 ;;
 esac
-
 echo "🛠️ Detected OS: $OS_TYPE"
-echo "📦 Using package manager: $PKG_MANAGER"
+echo "📦 Using package manager: $PKG_MANAGER (mode: $MODE)"
 
-# Step 1: Install Zsh if missing
-if ! command -v zsh &>/dev/null; then
-    echo "⚙️ Installing Zsh..."
-    if [[ "$PKG_MANAGER" == "brew" ]]; then
-        brew install zsh
-    else
-        sudo $PKG_MANAGER install -y zsh
-    fi
+# (Optional) Assume essential tools are already installed via install.sh
+# Only install build dependencies if --build mode is selected
+if [[ "$MODE" == "build" ]]; then
+  echo "📦 Installing build dependencies..."
+  case "$PKG_MANAGER" in
+    brew)
+      brew install ninja gettext libtool automake cmake pkg-config ;;
+    apt)
+      sudo apt update
+      sudo apt install -y ninja-build gettext libtool libtool-bin autoconf automake cmake g++ pkg-config unzip curl ;;
+    dnf|yum)
+      sudo "$PKG_MANAGER" install -y ninja-build gettext libtool autoconf automake cmake gcc-c++ [118;1:3upkgconfig unzip curl || true ;;
+    pacman)
+      sudo pacman -S --noconfirm base-devel ninja gettext libtool autoconf automake cmake pkgconf unzip curl ;;
+  esac
 fi
 
-# Step 2: Restart script using Zsh if not already running in Zsh
-if [[ -z "$ZSH_VERSION" ]]; then
-    echo "🔄 Restarting script with Zsh..."
-    exec zsh "$0"
-    exit
+# Install Neovim (different modes)
+echo "🚀 Installing Neovim..."
+if [[ "$MODE" == "pkg" ]]; then
+  case "$PKG_MANAGER" in
+    brew)  brew install neovim ;;
+    apt)   sudo add-apt-repository -y ppa:neovim-ppa/unstable && sudo apt update && sudo apt install -y neovim ;;
+    dnf|yum|pacman) sudo "$PKG_MANAGER" install -y neovim ;;
+  esac
+elif [[ "$MODE" == "build" ]]; then
+  tmpdir="$(mktemp -d)"
+  git clone https://github.com/neovim/neovim.git "$tmpdir/neovim"
+  (cd "$tmpdir/neovim" && make CMAKE_BUILD_TYPE=Release && sudo make install)
+  rm -rf "$tmpdir"
+elif [[ "$MODE" == "appimage" ]]; then
+  cd /tmp
+  curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim.appimage
+  chmod u+x nvim.appimage
+  sudo mv nvim.appimage /usr/local/bin/nvim
 fi
 
-# Step 3: Install essential packages
-echo "📦 Installing essential packages..."
-if [[ "$PKG_MANAGER" == "brew" ]]; then
-    brew install git neovim fzf ripgrep universal-ctags autojump
-elif [[ "$PKG_MANAGER" == "apt" ]]; then
-    sudo apt update && sudo apt install -y git neovim fzf ripgrep universal-ctags autojump
-elif [[ "$PKG_MANAGER" == "yum" || "$PKG_MANAGER" == "dnf" ]]; then
-    sudo $PKG_MANAGER install -y git neovim fzf ripgrep ctags autojump
+# Link Neovim config
+mkdir -p "$HOME/.config"
+ln -snf "$HOME/.dotfiles/.config/nvim" "$HOME/.config/nvim"
+
+# Bootstrap Lazy.nvim
+LAZY_DIR="$HOME/.local/share/nvim/lazy/lazy.nvim"
+if [ ! -d "$LAZY_DIR" ]; then
+  git clone --filter=blob:none https://github.com/folke/lazy.nvim.git --branch=stable "$LAZY_DIR"
 fi
 
-
-# Step 4: Install the latest Neovim
-echo "🚀 Installing the latest Neovim..."
-if [[ "$PKG_MANAGER" == "brew" ]]; then
-    brew install neovim
-elif [[ "$PKG_MANAGER" == "apt" ]]; then
-    sudo apt remove --purge neovim -y  # Remove old versions
-    curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
-    sudo rm -rf /opt/nvim
-    sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz
-    echo 'export PATH="$PATH:/opt/nvim-linux-x86_64/bin"' >> ~/.zshrc
-    source ~/.zshrc
-elif [[ "$PKG_MANAGER" == "yum" || "$PKG_MANAGER" == "dnf" ]]; then
-    sudo $PKG_MANAGER install -y neovim
-fi
-
-# Step 4: Ensure Neovim is the default editor
-#echo "🔗 Setting up Neovim as default editor..."
-#ln -sf "$(which nvim)" /usr/local/bin/vim
-#ln -sf "$(which nvim)" /usr/local/bin/vi
-#ln -sf "$(which nvim)" /usr/local/bin/editor
-
-# Step 5: Install Oh My Zsh
-if [ ! -d "$HOME/.oh-my-zsh" ]; then
-    echo "💡 Installing Oh My Zsh..."
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-else
-    echo "✅ Oh My Zsh is already installed."
-fi
-
-# Step 6: Install Powerlevel10k
-ZSH_CUSTOM=${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}
-if [ ! -d "$ZSH_CUSTOM/themes/powerlevel10k" ]; then
-    echo "💡 Installing Powerlevel10k..."
-    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$ZSH_CUSTOM/themes/powerlevel10k"
-else
-    echo "✅ Powerlevel10k is already installed."
-fi
-
-# Step 7: Install Oh My Zsh Plugins
-echo "🔌 Installing Oh My Zsh plugins..."
-
-if [ ! -d "$ZSH_CUSTOM/plugins/zsh-autosuggestions" ]; then
-    echo "💡 Installing zsh-autosuggestions..."
-    git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
-else
-    echo "✅ zsh-autosuggestions is already installed."
-fi
-
-if [ ! -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" ]; then
-    echo "💡 Installing zsh-syntax-highlighting..."
-    git clone https://github.com/zsh-users/zsh-syntax-highlighting "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
-else
-    echo "✅ zsh-syntax-highlighting is already installed."
-fi
-
-# Step 8: Ensure Neovim config directory exists
-if [ ! -d "$HOME/.config/" ]; then
-    echo "📁 Creating Neovim config directory..."
-    mkdir -p "$HOME/.config/"
-fi
-
-# Step 9: Link Neovim config file
-echo "🔗 Linking Neovim config file..."
-ln -sf "$HOME/.dotfiles/.config/nvim/" "$HOME/.config/nvim"
-
-# Step 10: Ensure Lazy.nvim is installed
-LAZY_NVM_DIR="$HOME/.local/share/nvim/lazy/lazy.nvim"
-if [ ! -d "$LAZY_NVM_DIR" ]; then
-    echo "💡 Installing Lazy.nvim..."
-    git clone --filter=blob:none https://github.com/folke/lazy.nvim.git --branch=stable "$LAZY_NVM_DIR"
-else
-    echo "✅ Lazy.nvim is already installed."
-fi
-
-# Step 11: Apply new settings
-echo "🚀 Applying new settings..."
-source ~/.zshrc
-
-# Step 12: Restart shell session
-echo "🔄 Restarting Zsh session..."
-exec zsh
-
+echo "✅ Done."
+command -v nvim >/dev/null 2>&1 && nvim --version | head -n1 || echo "⚠️ nvim not found in PATH"
