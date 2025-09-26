@@ -1,9 +1,4 @@
-local lspconfig = require("lspconfig")
-
-lspconfig.pyright.setup({
-  on_attach = function(client, bufnr)
-    print("Pyright attached to buffer " .. bufnr)
-  end,
+vim.lsp.config("pyright", {
   settings = {
     python = {
       analysis = {
@@ -14,3 +9,5 @@ lspconfig.pyright.setup({
     },
   },
 })
+
+vim.lsp.config("ruff", {})

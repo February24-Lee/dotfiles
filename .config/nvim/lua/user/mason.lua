@@ -1,4 +1,6 @@
-require("mason").setup({})
+require("mason").setup({
+  PATH = "prepend", -- Mason bin을 PATH에 추가
+})
 
 local mason_lspconfig = require("mason-lspconfig")
 mason_lspconfig.setup({
@@ -28,6 +30,10 @@ local on_attach = function(_, bufnr)
   vim.keymap.set("n", "<Leader>a", vim.lsp.buf.code_action, o)
   vim.keymap.set("n", "<Leader>rn", vim.lsp.buf.rename, o)
   vim.keymap.set("n", "<Leader>f", function() vim.lsp.buf.format({ async = true }) end, o)
+  -- 분할 창으로 정의 열기
+  vim.keymap.set("n", "gvd", "<cmd>vsplit | lua vim.lsp.buf.definition()<cr>", o)
+  vim.keymap.set("n", "gsd", "<cmd>split | lua vim.lsp.buf.definition()<cr>", o)
+  vim.keymap.set("n", "gtd", "<cmd>tab split | lua vim.lsp.buf.definition()<cr>", o)
 end
 
 vim.lsp.config("*", {

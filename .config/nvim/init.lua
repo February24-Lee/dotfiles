@@ -1,4 +1,5 @@
 -- 🌟 Basic settings
+vim.lsp.log.set_level(vim.log.levels.DEBUG)    -- Enable LSP debug logging
 vim.opt.number = true             -- Show line numbers
 vim.opt.relativenumber = true      -- Show relative line numbers
 vim.opt.tabstop = 4                -- Set tab width
@@ -11,6 +12,7 @@ vim.opt.wrapscan = true            -- Wrap search results
 vim.opt.syntax = "on"              -- Enable syntax highlighting
 
 -- 🌟 Enable transparent background
+-- test code
 vim.cmd [[
     highlight Normal guibg=NONE ctermbg=NONE
     highlight NonText guibg=NONE ctermbg=NONE
@@ -64,7 +66,10 @@ require("lazy").setup({
     -- "jose-elias-alvarez/none-ls.nvim",
     { "nvimtools/none-ls.nvim" },
     { "jay-babu/mason-null-ls.nvim", dependencies = { "nvimtools/none-ls.nvim", "williamboman/mason.nvim" } },
-
+    {
+      "nvimtools/none-ls.nvim",
+      dependencies = { "gbprod/none-ls-shellcheck.nvim" },
+    },
     -- 🌟 Virtual Environment Selector
     {
         "linux-cultist/venv-selector.nvim",
@@ -74,6 +79,7 @@ require("lazy").setup({
     -- 🌟 Navigation & File Search
     "nvim-telescope/telescope.nvim",
     "preservim/tagbar",
+    "SmiteshP/nvim-navic",
 
     -- 🌟 File Explorer
     "nvim-tree/nvim-tree.lua",
@@ -83,6 +89,38 @@ require("lazy").setup({
     "lewis6991/gitsigns.nvim",
     "lukas-reineke/indent-blankline.nvim",
     "b0o/schemastore.nvim",
+    {
+      "sindrets/diffview.nvim",
+      dependencies = { "nvim-tree/nvim-web-devicons" },  -- optional for icons
+      cmd = { "DiffviewOpen", "DiffviewClose", "DiffviewToggleFiles", "DiffviewFocusFiles" },
+      config = function()
+        require("diffview").setup({
+          use_icons = true,
+          view = {
+            default = {
+              layout = "diff2_horizontal",  -- 예: 가로 두 패널
+            },
+            merge_tool = {
+              layout = "diff3_horizontal",
+              disable_diagnostics = true,    -- merge중 diagnostics 방해되면 끄기
+            },
+          },
+          file_panel = {
+            listing_style = "tree",
+            win_config = {
+              position = "left",
+              width = 35,
+            },
+          },
+          keymaps = {
+            view = {
+              ["<tab>"] = require("diffview.actions").select_next_entry,
+              ["<s-tab>"] = require("diffview.actions").select_prev_entry,
+            },
+          },
+        })
+      end,
+    },
 })
 
 -- 🌟 Mason & LSP auto setup
@@ -90,15 +128,23 @@ require("lazy").setup({
 require("user.mason")
 require("user.lsp")
 require("user.none-ls")
+require("user.venv-selector")
 
 vim.api.nvim_create_autocmd("BufWritePre", {
   pattern = { "*.py" },
   callback = function(ev)
+    -- Auto-fix with ruff
+    vim.lsp.buf.code_action({
+      context = { only = { "source.fixAll" } },
+      apply = true,
+    })
+    
+    -- Format with ruff
     vim.lsp.buf.format({
       bufnr = ev.buf,
       timeout_ms = 4000,
       filter = function(client)
-        return client.name == "ruff"  
+        return client.name == "ruff" or client.name == "null-ls"
       end,
     })
   end,
@@ -120,39 +166,40 @@ cmp.setup({
 
 
 -- 🌟 Virtual Environment Selector
-local home = os.getenv("HOME") or ""
-local conda_root = nil
-
-if vim.fn.executable("conda") == 1 then
-  -- If conda is available in PATH, retrieve its base directory using "conda info --base"
-  local conda_base = vim.fn.system("conda info --base")
-  conda_root = vim.fn.trim(conda_base)
-elseif vim.loop.fs_stat(home .. "/opt/anaconda3") then
-  -- Use $HOME/opt/anaconda3 if it exists
-  conda_root = home .. "/opt/anaconda3"
-elseif vim.loop.fs_stat(home .. "/miniconda") then
-  -- Fallback to $HOME/miniconda if none of the above conditions match
-  conda_root = home .. "/miniconda"
-end
+-- local home = os.getenv("HOME") or ""
+-- local conda_root = nil
+--
+-- if vim.fn.executable("conda") == 1 then
+--   -- If conda is available in PATH, retrieve its base directory using "conda info --base"
+--   local conda_base = vim.fn.system("conda info --base")
+--   conda_root = vim.fn.trim(conda_base)
+-- elseif vim.loop.fs_stat(home .. "/opt/anaconda3") then
+--   -- Use $HOME/opt/anaconda3 if it exists
+--   conda_root = home .. "/opt/anaconda3"
+-- elseif vim.loop.fs_stat(home .. "/miniconda") then
+--   -- Fallback to $HOME/miniconda if none of the above conditions match
+--   conda_root = home .. "/miniconda"
+-- end
 
 -- Use conda_root/envs as the environments path if conda_root is determined
-local conda_envs_path = conda_root and (conda_root .. "/envs") or nil
-
+-- local conda_envs_path = conda_root and (conda_root .. "/envs") or nil
 -- Virtual Environment Selector configuration
-require("venv-selector").setup({
-    -- Automatically find virtual environments in workspace
-    parents = 2,  -- Search up to 2 parent directories for virtualenvs
-    name = { "venv", ".venv", "env", "pyenv" },  -- Names to search for
-    fd_binary_name = "fd",  -- Ensure 'fd' is used for searching
-    search_paths = {
-        os.getenv("CONDA_PREFIX"),         -- Currently active Conda environment (if available)
-        conda_envs_path,                   -- Determined Conda environments path (e.g., $HOME/miniconda/envs or $HOME/opt/anaconda3/envs)
-        home .. "/.conda/envs",            -- Alternative Conda environments path
-    },
-    anaconda_base_path = conda_envs_path,  -- Conda environments base path
-    enable_debug = true,                   -- Enable debug mode
-})
-vim.api.nvim_set_keymap("n", "<Leader>vs", ":VenvSelect<CR>", { noremap = true, silent = true })
+-- require("venv-selector").setup({
+--     parents = 0,  -- Only search current directory
+--     name = { ".venv", "venv" },
+--     fd_binary_name = "fd",
+--     search = false,  -- Disable auto workspace search
+--     search_workspace = false,
+--     search_paths = vim.tbl_filter(function(path)
+--         return path ~= nil
+--     end, {
+--         os.getenv("CONDA_PREFIX"),
+--         conda_envs_path,
+--     }),
+--     anaconda_base_path = conda_envs_path,
+--     enable_debug = false,
+-- })
+-- vim.api.nvim_set_keymap("n", "<Leader>vs", ":VenvSelect<CR>", { noremap = true, silent = true })
 
 -- 🌟 File Explorer (nvim-tree)
 require("nvim-tree").setup()
@@ -172,8 +219,20 @@ require("ibl").setup({
 })
 
 -- 🌟 Key mappings
-vim.api.nvim_set_keymap("n", "<F8>", ":TagbarToggle<CR>", { noremap = true, silent = true })  -- Toggle ctags view
-vim.api.nvim_set_keymap("n", "<C-p>", ":Telescope find_files<CR>", { noremap = true, silent = true }) -- File search
-vim.api.nvim_set_keymap("n", "<Leader>g", ":Telescope live_grep<CR>", { noremap = true, silent = true }) -- Code search
-vim.api.nvim_set_keymap("i", "jj", "<Esc>", { noremap = true })  -- `jj` -> Escape
-vim.api.nvim_set_keymap("i", "jk", "<Esc>", { noremap = true })  -- `jk` -> Escape
+-- LSP rename
+vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, { desc = "LSP Rename" })
+
+-- File explorer
+vim.keymap.set("n", "<leader>e", "<cmd>NvimTreeToggle<CR>", { desc = "Toggle File Explorer", silent = true })
+vim.keymap.set("n", "<leader>o", "<cmd>NvimTreeFocus<CR>",  { desc = "Focus File Explorer",  silent = true })
+
+-- Tagbar
+vim.keymap.set("n", "<F8>", "<cmd>TagbarToggle<CR>", { desc = "Toggle Tagbar", silent = true })
+
+-- Telescope
+vim.keymap.set("n", "<C-p>",     "<cmd>Telescope find_files<CR>", { desc = "Find files",  silent = true })
+vim.keymap.set("n", "<leader>g", "<cmd>Telescope live_grep<CR>",  { desc = "Live grep",   silent = true })
+
+-- Insert mode escape
+vim.keymap.set("i", "jj", "<Esc>", { desc = "Escape" })
+vim.keymap.set("i", "jk", "<Esc>", { desc = "Escape" })
