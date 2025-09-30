@@ -76,6 +76,19 @@ require("lazy").setup({
         branch="main",
     },
 
+    -- 🌟 Jupyter Integration (molten-nvim)
+    {
+        "benlubas/molten-nvim",
+        version = "^1.0.0",
+        build = ":UpdateRemotePlugins",
+        init = function()
+            vim.g.molten_output_win_max_height = 20
+            vim.g.molten_auto_open_output = false
+            vim.g.molten_wrap_output = true
+            vim.g.molten_virt_text_output = true
+        end,
+    },
+
     -- 🌟 Navigation & File Search
     "nvim-telescope/telescope.nvim",
     "preservim/tagbar",
@@ -120,6 +133,13 @@ require("lazy").setup({
           },
         })
       end,
+    },
+    {
+      "NeogitOrg/neogit",
+        dependencies = {
+        "nvim-lua/plenary.nvim",         -- required
+        "sindrets/diffview.nvim"        -- optional - Diff Integration
+        }
     },
 })
 
@@ -236,3 +256,12 @@ vim.keymap.set("n", "<leader>g", "<cmd>Telescope live_grep<CR>",  { desc = "Live
 -- Insert mode escape
 vim.keymap.set("i", "jj", "<Esc>", { desc = "Escape" })
 vim.keymap.set("i", "jk", "<Esc>", { desc = "Escape" })
+
+-- Molten (Jupyter) key mappings
+vim.keymap.set("n", "<leader>mi", ":MoltenInit<CR>", { desc = "Initialize Molten", silent = true })
+vim.keymap.set("n", "<leader>me", ":MoltenEvaluateOperator<CR>", { desc = "Evaluate Operator", silent = true })
+vim.keymap.set("n", "<leader>ml", ":MoltenEvaluateLine<CR>", { desc = "Evaluate Line", silent = true })
+vim.keymap.set("v", "<leader>mr", ":<C-u>MoltenEvaluateVisual<CR>gv", { desc = "Evaluate Visual", silent = true })
+vim.keymap.set("n", "<leader>mo", ":MoltenShowOutput<CR>", { desc = "Show Output", silent = true })
+vim.keymap.set("n", "<leader>mh", ":MoltenHideOutput<CR>", { desc = "Hide Output", silent = true })
+vim.keymap.set("n", "<leader>md", ":MoltenDelete<CR>", { desc = "Delete Molten Cell", silent = true })

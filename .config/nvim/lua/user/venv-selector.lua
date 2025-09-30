@@ -1,56 +1,28 @@
--- Detect project root (prefer Git root, fallback to CWD)
-local function project_root()
-  local git_root = vim.fn.systemlist("git rev-parse --show-toplevel")[1]
-  if git_root and git_root ~= "" then return git_root end
-  return vim.loop.cwd()
-end
-local ROOT = project_root()
+-- Detect fd binary (Ubuntu often ships it as `fdfind`)
+local FD = (vim.fn.executable("fd") == 1) and "fd" or "fdfind"
 
 require("venv-selector").setup({
+  -- Look for virtualenv folders with these names
+  name = { ".venv", "venv" },
+
+  -- Search up to N parent directories from the current working directory
+  parents = 2,
+
+  -- Core options
   options = {
-    enable_default_searches = true,
-    fd_binary_name = "fd",
-    search_timeout = 5,
-    debug = false,
+    fd_binary_name = FD,       -- important: use `fdfind` when `fd` is unavailable
+    enable_default_searches = true, -- rely on plugin's built-in searches
+    search_timeout = 5,        -- seconds; increase if your repo is huge
+    debug = false,             -- set true temporarily to inspect :messages output
   },
+
+  -- Keep workspace-wide search off if it's slow on your machine
   search = {
-    -- keep workspace off if it's slow for you
     workspace = false,
-
-    -- ✅ include hidden dirs so `.venv` is discovered
-    cwd = {
-      -- was: ... -I ...
-      command = "fd '/(\\.venv|venv)/(bin|Scripts)/(python|python3)(\\.exe)?$' "
-        .. "$CWD --full-path --color=never -H -a -L",
-    },
-
-    -- (optional) explicitly scan project root (Git root) for .venv
-    project_root = {
-      command = "fd '/(\\.venv|venv)/(bin|Scripts)/(python|python3)(\\.exe)?$' "
-        .. ROOT .. " --full-path --color=never -H -a -L",
-    },
-
-    -- conda envs (unchanged)
-    conda_envs = (function()
-      local home = os.getenv("HOME") or ""
-      local conda_root
-      if vim.fn.executable("conda") == 1 then
-        conda_root = vim.fn.trim(vim.fn.system("conda info --base"))
-      elseif vim.loop.fs_stat(home .. "/opt/anaconda3") then
-        conda_root = home .. "/opt/anaconda3"
-      elseif vim.loop.fs_stat(home .. "/miniconda") then
-        conda_root = home .. "/miniconda"
-      end
-      if conda_root then
-        local conda_envs_path = conda_root .. "/envs"
-        return {
-          command = "fd '/(bin|Scripts)/(python|python3)(\\.exe)?$' "
-            .. conda_envs_path .. " --full-path --color=never -H -a -L",
-          type = "anaconda",
-        }
-      end
-    end)(),
+    -- We don't override `cwd`/`project_root` commands here to avoid brittle quoting/regex issues.
+    -- The built-in search works well for standard .venv layouts.
   },
 })
 
-vim.keymap.set("n", "<Leader>vs", ":VenvSelect<CR>", { noremap = true, silent = true })
+-- Optional: keymap to open the venv picker quickly
+vim.keymap.set("n", "<Leader>vs", "<cmd>VenvSelect<CR>", { noremap = true, silent = true })
