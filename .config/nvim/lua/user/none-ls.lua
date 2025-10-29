@@ -7,6 +7,7 @@ pcall(function()
       "prettier",   -- Web formatter 
       "shfmt",      -- Shell formatter
       "shellcheck", -- Shell linter
+      "ruff",       -- Python linter & formatter
     },
     automatic_installation = true,
   })
@@ -18,10 +19,12 @@ null_ls.setup({
     null_ls.builtins.formatting.stylua,
 
     -- Shell
-    null_ls.builtins.diagnostics.shellcheck,
     null_ls.builtins.formatting.shfmt,
+    require("none-ls-shellcheck.diagnostics"),
 
     -- Web 
     null_ls.builtins.formatting.prettier,
+
+    -- Python (using ruff LSP instead of none-ls builtins)
   },
 })
