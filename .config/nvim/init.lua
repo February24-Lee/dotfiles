@@ -1,3 +1,6 @@
+-- 
+vim.g.python3_host_prog = vim.fn.expand("$HOME/miniconda/bin/python")  
+
 -- 🌟 Basic settings
 vim.lsp.log.set_level(vim.log.levels.DEBUG)    -- Enable LSP debug logging
 vim.opt.number = true             -- Show line numbers
@@ -222,7 +225,16 @@ cmp.setup({
 -- vim.api.nvim_set_keymap("n", "<Leader>vs", ":VenvSelect<CR>", { noremap = true, silent = true })
 
 -- 🌟 File Explorer (nvim-tree)
-require("nvim-tree").setup()
+require("nvim-tree").setup({
+    git = {
+        enable = true,
+        ignore = false,  -- Show .gitignore'd files
+    },
+    filters = {
+        dotfiles = false,  -- Show dotfiles
+        git_ignored = false,  -- Show git ignored files
+    },
+})
 vim.keymap.set("n", "<leader>e", ":NvimTreeToggle<CR>", { noremap = true, silent = true })
 
 -- 🌟 Statusline (lualine)
@@ -265,3 +277,6 @@ vim.keymap.set("v", "<leader>mr", ":<C-u>MoltenEvaluateVisual<CR>gv", { desc = "
 vim.keymap.set("n", "<leader>mo", ":MoltenShowOutput<CR>", { desc = "Show Output", silent = true })
 vim.keymap.set("n", "<leader>mh", ":MoltenHideOutput<CR>", { desc = "Hide Output", silent = true })
 vim.keymap.set("n", "<leader>md", ":MoltenDelete<CR>", { desc = "Delete Molten Cell", silent = true })
+
+-- Image preview with viu
+vim.keymap.set("n", "<leader>ip", ":!viu -w 80 %<CR>", { desc = "Preview Image" })
