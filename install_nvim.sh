@@ -20,7 +20,7 @@ case "$OS" in
   Darwin*) OS_TYPE="macOS"; PKG_MANAGER="brew" ;;
   Linux*)
     OS_TYPE="Linux"
-    if command -v apt &>/dev/null; then PKG_MANAGER="apt"
+    if command -v apt-get &>/dev/null; then PKG_MANAGER="apt-get"
     elif command -v dnf &>/dev/null; then PKG_MANAGER="dnf"
     elif command -v yum &>/dev/null; then PKG_MANAGER="yum"
     elif command -v pacman &>/dev/null; then PKG_MANAGER="pacman"
@@ -30,6 +30,14 @@ esac
 echo "🛠️ Detected OS: $OS_TYPE"
 echo "📦 Using package manager: $PKG_MANAGER (mode: $MODE)"
 
+# Set SUDO variable - skip sudo if running as root
+if [ "$(id -u)" -eq 0 ]; then
+    SUDO=""
+    echo "🔑 Running as root, skipping sudo"
+else
+    SUDO="sudo"
+fi
+
 # (Optional) Assume essential tools are already installed via install.sh
 # Only install build dependencies if --build mode is selected
 if [[ "$MODE" == "build" ]]; then
@@ -37,13 +45,13 @@ if [[ "$MODE" == "build" ]]; then
   case "$PKG_MANAGER" in
     brew)
       brew install ninja gettext libtool automake cmake pkg-config ;;
-    apt)
-      sudo apt update
-      sudo apt install -y ninja-build gettext libtool libtool-bin autoconf automake cmake g++ pkg-config unzip curl ;;
+    apt-get)
+      $SUDO apt-get update
+      $SUDO apt-get install -y ninja-build gettext libtool libtool-bin autoconf automake cmake g++ pkg-config unzip curl ;;
     dnf|yum)
-      sudo "$PKG_MANAGER" install -y ninja-build gettext libtool autoconf automake cmake gcc-c++ [118;1:3upkgconfig unzip curl || true ;;
+      $SUDO "$PKG_MANAGER" install -y ninja-build gettext libtool autoconf automake cmake gcc-c++ pkgconfig unzip curl || true ;;
     pacman)
-      sudo pacman -S --noconfirm base-devel ninja gettext libtool autoconf automake cmake pkgconf unzip curl ;;
+      $SUDO pacman -S --noconfirm base-devel ninja gettext libtool autoconf automake cmake pkgconf unzip curl ;;
   esac
 fi
 
@@ -52,19 +60,26 @@ echo "🚀 Installing Neovim..."
 if [[ "$MODE" == "pkg" ]]; then
   case "$PKG_MANAGER" in
     brew)  brew install neovim ;;
-    apt)   sudo add-apt-repository -y ppa:neovim-ppa/unstable && sudo apt update && sudo apt install -y neovim ;;
-    dnf|yum|pacman) sudo "$PKG_MANAGER" install -y neovim ;;
+    apt-get)
+      # Install software-properties-common for add-apt-repository (if missing)
+      if ! command -v add-apt-repository &>/dev/null; then
+        $SUDO apt-get update
+        $SUDO apt-get install -y software-properties-common
+      fi
+      $SUDO add-apt-repository -y ppa:neovim-ppa/unstable
+      $SUDO apt-get update
+      $SUDO apt-get install -y neovim ;;
+    dnf|yum|pacman) $SUDO "$PKG_MANAGER" install -y neovim ;;
   esac
 elif [[ "$MODE" == "build" ]]; then
   tmpdir="$(mktemp -d)"
   git clone https://github.com/neovim/neovim.git "$tmpdir/neovim"
-  (cd "$tmpdir/neovim" && make CMAKE_BUILD_TYPE=Release && sudo make install)
+  (cd "$tmpdir/neovim" && make CMAKE_BUILD_TYPE=Release && $SUDO make install)
   rm -rf "$tmpdir"
 elif [[ "$MODE" == "appimage" ]]; then
-  cd /tmp
-  curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim.appimage
-  chmod u+x nvim.appimage
-  sudo mv nvim.appimage /usr/local/bin/nvim
+  curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim.appimage --output-dir /tmp
+  chmod u+x /tmp/nvim.appimage
+  $SUDO mv /tmp/nvim.appimage /usr/local/bin/nvim
 fi
 
 # Link Neovim config
