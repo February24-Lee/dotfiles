@@ -41,7 +41,30 @@ fi
 # Function to install Neovim via appimage (works without FUSE in containers)
 install_appimage() {
   echo "📦 Installing Neovim via appimage..."
-  curl -Lo /tmp/nvim.appimage https://github.com/neovim/neovim/releases/latest/download/nvim.appimage
+  local url="https://github.com/neovim/neovim/releases/latest/download/nvim.appimage"
+  local auth_header=""
+
+  # Use GitHub token if available (helps with rate limits)
+  if [ -n "${GITHUB_TOKEN:-}" ]; then
+    auth_header="-H \"Authorization: token $GITHUB_TOKEN\""
+  fi
+
+  # Download with retry and fail-fast (-f prevents saving error HTML)
+  if ! curl -fL --retry 6 --retry-delay 2 --retry-all-errors \
+       $auth_header -o /tmp/nvim.appimage "$url"; then
+    echo "❌ Failed to download appimage"
+    return 1
+  fi
+
+  # Validate file size (must be > 1MB, otherwise it's likely an error page)
+  local filesize
+  filesize=$(stat -c%s /tmp/nvim.appimage 2>/dev/null || stat -f%z /tmp/nvim.appimage 2>/dev/null || echo 0)
+  if [ "$filesize" -lt 1000000 ]; then
+    echo "❌ Download failed (file too small: ${filesize} bytes)"
+    rm -f /tmp/nvim.appimage
+    return 1
+  fi
+
   chmod u+x /tmp/nvim.appimage
 
   # Try to extract appimage (works without FUSE)
@@ -99,6 +122,8 @@ if [[ "$MODE" == "pkg" ]]; then
     dnf|yum|pacman) $SUDO "$PKG_MANAGER" install -y neovim ;;
   esac
 elif [[ "$MODE" == "build" ]]; then
+  # Set CURL with retry for Neovim's dependency downloads
+  export CURL="curl -fL --retry 6 --retry-delay 2 --retry-all-errors"
   tmpdir="$(mktemp -d)"
   git clone https://github.com/neovim/neovim.git "$tmpdir/neovim"
   (cd "$tmpdir/neovim" && make CMAKE_BUILD_TYPE=Release && $SUDO make install)
