@@ -41,17 +41,25 @@ fi
 # Function to install Neovim via appimage (works without FUSE in containers)
 install_appimage() {
   echo "📦 Installing Neovim via appimage..."
-  local url="https://github.com/neovim/neovim/releases/latest/download/nvim.appimage"
-  local auth_header=""
 
-  # Use GitHub token if available (helps with rate limits)
-  if [ -n "${GITHUB_TOKEN:-}" ]; then
-    auth_header="-H \"Authorization: token $GITHUB_TOKEN\""
-  fi
+  # Detect architecture and set correct filename
+  local arch file
+  arch="$(uname -m)"
+  case "$arch" in
+    x86_64|amd64)  file="nvim-linux-x86_64.appimage" ;;
+    aarch64|arm64) file="nvim-linux-arm64.appimage" ;;
+    *)
+      echo "❌ Unsupported architecture: $arch"
+      return 1
+      ;;
+  esac
 
-  # Download with retry and fail-fast (-f prevents saving error HTML)
+  local url="https://github.com/neovim/neovim/releases/latest/download/${file}"
+  echo "📥 Downloading: $url"
+
+  # Download with retry and fail-fast
   if ! curl -fL --retry 6 --retry-delay 2 --retry-all-errors \
-       $auth_header -o /tmp/nvim.appimage "$url"; then
+       -o /tmp/nvim.appimage "$url"; then
     echo "❌ Failed to download appimage"
     return 1
   fi
