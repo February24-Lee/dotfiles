@@ -10,8 +10,8 @@ case "$OS" in
         ;;
     Linux*)
         OS_TYPE="Linux"
-        if command -v apt &>/dev/null; then
-            PKG_MANAGER="apt"
+        if command -v apt-get &>/dev/null; then
+            PKG_MANAGER="apt-get"
         elif command -v yum &>/dev/null; then
             PKG_MANAGER="yum"
         elif command -v dnf &>/dev/null; then
@@ -30,6 +30,14 @@ esac
 echo "🛠️ Detected OS: $OS_TYPE"
 echo "📦 Using package manager: $PKG_MANAGER"
 
+# Set SUDO variable - skip sudo if running as root
+if [ "$(id -u)" -eq 0 ]; then
+    SUDO=""
+    echo "🔑 Running as root, skipping sudo"
+else
+    SUDO="sudo"
+fi
+
 # Step 1: Install Zsh if missing
 if ! command -v zsh &>/dev/null; then
     echo "⚙️ Installing Zsh..."
@@ -37,28 +45,29 @@ if ! command -v zsh &>/dev/null; then
     if [[ "$PKG_MANAGER" == "brew" ]]; then
         brew install zsh
     else
-        sudo $PKG_MANAGER install -y zsh
+        $SUDO $PKG_MANAGER update
+        $SUDO $PKG_MANAGER install -y zsh
     fi
 fi
 
 # Step 2: Restart script using Zsh if not already running in Zsh
-if [[ -z "$ZSH_VERSION" ]]; then
+if [[ -z "$ZSH_VERSION" ]] && command -v zsh &>/dev/null; then
     echo "🔄 Restarting script with Zsh..."
     exec zsh "$0"
-    exit
 fi
 
 # Step 3: Install essential packages (macOS & Linux)
 echo "📦 Installing essential packages..."
 if [[ "$PKG_MANAGER" == "brew" ]]; then
     brew install git vim fzf ripgrep fd
-elif [[ "$PKG_MANAGER" == "apt" ]]; then
-    sudo apt update && sudo apt install -y git vim fzf ripgrep fd-find
+elif [[ "$PKG_MANAGER" == "apt-get" ]]; then
+    $SUDO apt-get update && $SUDO apt-get install -y git vim fzf ripgrep fd-find
+    mkdir -p ~/.local/bin
     ln -sf $(which fdfind) ~/.local/bin/fd  # Ubuntu에서는 fdfind로 설치되므로 fd로 링크
 elif [[ "$PKG_MANAGER" == "yum" || "$PKG_MANAGER" == "dnf" ]]; then
-    sudo $PKG_MANAGER install -y git vim fzf ripgrep fd-find
+    $SUDO $PKG_MANAGER install -y git vim fzf ripgrep fd-find
 elif [[ "$PKG_MANAGER" == "pacman" ]]; then
-    sudo pacman -S --noconfirm git vim fzf ripgrep fd
+    $SUDO pacman -S --noconfirm git vim fzf ripgrep fd
 else
     echo "❌ Unsupported package manager. Skipping fd installation."
 fi
@@ -140,10 +149,10 @@ if ! command -v j &>/dev/null; then
     
     if [[ "$PKG_MANAGER" == "brew" ]]; then
         brew install autojump
-    elif [[ "$PKG_MANAGER" == "apt" ]]; then
-        sudo apt install -y autojump
+    elif [[ "$PKG_MANAGER" == "apt-get" ]]; then
+        $SUDO apt-get install -y autojump
     elif [[ "$PKG_MANAGER" == "yum" || "$PKG_MANAGER" == "dnf" ]]; then
-        sudo $PKG_MANAGER install -y autojump
+        $SUDO $PKG_MANAGER install -y autojump
     else
         echo "❌ Autojump is not available in this package manager. Skipping."
     fi
