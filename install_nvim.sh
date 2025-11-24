@@ -38,6 +38,30 @@ else
     SUDO="sudo"
 fi
 
+# Function to install Neovim via appimage (works without FUSE in containers)
+install_appimage() {
+  echo "📦 Installing Neovim via appimage..."
+  curl -Lo /tmp/nvim.appimage https://github.com/neovim/neovim/releases/latest/download/nvim.appimage
+  chmod u+x /tmp/nvim.appimage
+
+  # Try to extract appimage (works without FUSE)
+  cd /tmp
+  ./nvim.appimage --appimage-extract >/dev/null 2>&1 || true
+
+  if [ -d "/tmp/squashfs-root" ]; then
+    # Extracted successfully - install extracted version
+    $SUDO rm -rf /opt/nvim
+    $SUDO mv /tmp/squashfs-root /opt/nvim
+    $SUDO ln -sf /opt/nvim/AppRun /usr/local/bin/nvim
+    echo "✅ Neovim installed (extracted appimage)"
+  else
+    # Extraction failed - try direct appimage (requires FUSE)
+    $SUDO mv /tmp/nvim.appimage /usr/local/bin/nvim
+    echo "✅ Neovim installed (appimage)"
+  fi
+  rm -f /tmp/nvim.appimage
+}
+
 # (Optional) Assume essential tools are already installed via install.sh
 # Only install build dependencies if --build mode is selected
 if [[ "$MODE" == "build" ]]; then
@@ -61,14 +85,17 @@ if [[ "$MODE" == "pkg" ]]; then
   case "$PKG_MANAGER" in
     brew)  brew install neovim ;;
     apt-get)
-      # Install software-properties-common for add-apt-repository (if missing)
-      if ! command -v add-apt-repository &>/dev/null; then
-        $SUDO apt-get update
-        $SUDO apt-get install -y software-properties-common
-      fi
-      $SUDO add-apt-repository -y ppa:neovim-ppa/unstable
-      $SUDO apt-get update
-      $SUDO apt-get install -y neovim ;;
+      # Try PPA first, fallback to appimage if it fails
+      if $SUDO apt-get update && \
+         $SUDO apt-get install -y software-properties-common python3-apt && \
+         $SUDO add-apt-repository -y ppa:neovim-ppa/unstable && \
+         $SUDO apt-get update && \
+         $SUDO apt-get install -y neovim; then
+        echo "✅ Neovim installed via PPA"
+      else
+        echo "⚠️ PPA failed, falling back to appimage..."
+        install_appimage
+      fi ;;
     dnf|yum|pacman) $SUDO "$PKG_MANAGER" install -y neovim ;;
   esac
 elif [[ "$MODE" == "build" ]]; then
@@ -77,9 +104,7 @@ elif [[ "$MODE" == "build" ]]; then
   (cd "$tmpdir/neovim" && make CMAKE_BUILD_TYPE=Release && $SUDO make install)
   rm -rf "$tmpdir"
 elif [[ "$MODE" == "appimage" ]]; then
-  curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim.appimage --output-dir /tmp
-  chmod u+x /tmp/nvim.appimage
-  $SUDO mv /tmp/nvim.appimage /usr/local/bin/nvim
+  install_appimage
 fi
 
 # Link Neovim config
