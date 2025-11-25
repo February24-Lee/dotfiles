@@ -136,6 +136,7 @@ fi
 echo "🔗 Creating soft links for dotfiles..."
 ln -sf ~/.dotfiles/.zshrc ~/.zshrc
 ln -sf ~/.dotfiles/.vimrc ~/.vimrc
+ln -sf ~/.dotfiles/.tmux.conf ~/.tmux.conf
 
 # Step 8: Ensure Vim Plug is installed
 if [ ! -f "$HOME/.vim/autoload/plug.vim" ]; then
