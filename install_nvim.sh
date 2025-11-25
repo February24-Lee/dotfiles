@@ -82,16 +82,27 @@ install_appimage() {
   cd /tmp
   ./nvim.appimage --appimage-extract >/dev/null 2>&1 || true
 
+  # Determine install location based on privileges
+  local nvim_dir nvim_bin
+  if [ "$(id -u)" -eq 0 ] || [ -n "$SUDO" ]; then
+    nvim_dir="/opt/nvim"
+    nvim_bin="/usr/local/bin/nvim"
+  else
+    nvim_dir="$HOME/.local/opt/nvim"
+    nvim_bin="$HOME/.local/bin/nvim"
+    mkdir -p "$HOME/.local/opt" "$HOME/.local/bin"
+  fi
+
   if [ -d "/tmp/squashfs-root" ]; then
     # Extracted successfully - install extracted version
-    $SUDO rm -rf /opt/nvim
-    $SUDO mv /tmp/squashfs-root /opt/nvim
-    $SUDO ln -sf /opt/nvim/AppRun /usr/local/bin/nvim
-    echo "✅ Neovim installed (extracted appimage)"
+    $SUDO rm -rf "$nvim_dir"
+    $SUDO mv /tmp/squashfs-root "$nvim_dir"
+    $SUDO ln -sf "$nvim_dir/AppRun" "$nvim_bin"
+    echo "✅ Neovim installed (extracted appimage) → $nvim_bin"
   else
     # Extraction failed - try direct appimage (requires FUSE)
-    $SUDO mv /tmp/nvim.appimage /usr/local/bin/nvim
-    echo "✅ Neovim installed (appimage)"
+    $SUDO mv /tmp/nvim.appimage "$nvim_bin"
+    echo "✅ Neovim installed (appimage) → $nvim_bin"
   fi
   rm -f /tmp/nvim.appimage
 }
