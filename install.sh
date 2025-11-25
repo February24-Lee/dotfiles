@@ -30,12 +30,15 @@ esac
 echo "🛠️ Detected OS: $OS_TYPE"
 echo "📦 Using package manager: $PKG_MANAGER"
 
-# Set SUDO variable - skip sudo if running as root
+# Set SUDO variable - skip sudo if running as root or sudo not available
 if [ "$(id -u)" -eq 0 ]; then
     SUDO=""
     echo "🔑 Running as root, skipping sudo"
-else
+elif command -v sudo &>/dev/null; then
     SUDO="sudo"
+else
+    SUDO=""
+    echo "⚠️ sudo not found, running without elevated privileges"
 fi
 
 # Step 1: Install Zsh if missing
