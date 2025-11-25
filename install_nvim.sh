@@ -154,8 +154,9 @@ elif [[ "$MODE" == "appimage" ]]; then
   install_appimage
 fi
 
-# Link Neovim config
+# Link Neovim config (remove existing dir/file first to avoid nested symlink)
 mkdir -p "$HOME/.config"
+rm -rf "$HOME/.config/nvim"
 ln -snf "$HOME/.dotfiles/.config/nvim" "$HOME/.config/nvim"
 
 # Bootstrap Lazy.nvim
