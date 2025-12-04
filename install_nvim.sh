@@ -165,5 +165,55 @@ if [ ! -d "$LAZY_DIR" ]; then
   git clone --filter=blob:none https://github.com/folke/lazy.nvim.git --branch=stable "$LAZY_DIR"
 fi
 
+# Install fd (for Telescope file search)
+install_fd_binary() {
+  echo "📦 Installing fd from GitHub release..."
+  local arch fd_url
+  arch="$(uname -m)"
+  case "$arch" in
+    x86_64|amd64) fd_url="https://github.com/sharkdp/fd/releases/download/v10.2.0/fd-v10.2.0-x86_64-unknown-linux-musl.tar.gz" ;;
+    aarch64|arm64) fd_url="https://github.com/sharkdp/fd/releases/download/v10.2.0/fd-v10.2.0-aarch64-unknown-linux-musl.tar.gz" ;;
+    *) echo "❌ Unsupported architecture for fd: $arch"; return 1 ;;
+  esac
+  curl -fL "$fd_url" | tar xz -C /tmp
+  mkdir -p "$HOME/.local/bin"
+  mv /tmp/fd-*/fd "$HOME/.local/bin/"
+  rm -rf /tmp/fd-v*/
+  echo "✅ fd installed to ~/.local/bin/fd"
+}
+
+echo "📦 Installing fd (fast file finder for Telescope)..."
+if command -v fd &>/dev/null || command -v fdfind &>/dev/null; then
+  echo "✅ fd already installed"
+else
+  fd_installed=false
+  case "$PKG_MANAGER" in
+    brew)
+      brew install fd && fd_installed=true ;;
+    apt-get)
+      if $SUDO apt-get install -y fd-find 2>/dev/null; then
+        fd_installed=true
+        # Debian/Ubuntu installs as 'fdfind', create alias
+        if command -v fdfind &>/dev/null && ! command -v fd &>/dev/null; then
+          mkdir -p "$HOME/.local/bin"
+          ln -sf "$(command -v fdfind)" "$HOME/.local/bin/fd"
+          echo "✅ Created symlink: fd -> fdfind"
+        fi
+      fi ;;
+    dnf)
+      $SUDO dnf install -y fd-find 2>/dev/null && fd_installed=true ;;
+    yum)
+      $SUDO yum install -y fd-find 2>/dev/null && fd_installed=true ;;
+    pacman)
+      $SUDO pacman -S --noconfirm fd 2>/dev/null && fd_installed=true ;;
+  esac
+
+  # Fallback to binary if package install failed
+  if [ "$fd_installed" = false ]; then
+    echo "⚠️ Package install failed, falling back to binary..."
+    install_fd_binary
+  fi
+fi
+
 echo "✅ Done."
 command -v nvim >/dev/null 2>&1 && nvim --version | head -n1 || echo "⚠️ nvim not found in PATH"
