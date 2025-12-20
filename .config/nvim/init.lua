@@ -51,7 +51,7 @@ require("lazy").setup({
       build = ":TSUpdate",
       config = function()
         require("nvim-treesitter.configs").setup({
-          ensure_installed = { "lua", "python" }, -- 필요 언어 추가
+          ensure_installed = { "lua", "python", "typescript", "tsx", "javascript", "json", "css", "html" },
           auto_install = true,
           highlight = { enable = true },
           indent = { enable = true },
@@ -257,7 +257,15 @@ vim.keymap.set("n", "<leader>e", ":NvimTreeToggle<CR>", { noremap = true, silent
 
 -- 🌟 Statusline (lualine)
 require("lualine").setup({
-    options = { theme = "gruvbox" }
+    options = { theme = "gruvbox" },
+    sections = {
+        lualine_c = {
+            {
+                'filename',
+                path = 1,  -- 0: filename only, 1: relative path, 2: absolute path
+            }
+        }
+    }
 })
 
 -- 🌟 Git signs
