@@ -5,11 +5,18 @@ require("mason").setup({
 local mason_lspconfig = require("mason-lspconfig")
 mason_lspconfig.setup({
   ensure_installed = {
+    -- Python
     "pyright",
-    "lua_ls",
-    "bashls",
-    "jsonls",
     "ruff",
+    -- Lua
+    "lua_ls",
+    -- Shell
+    "bashls",
+    -- JSON
+    "jsonls",
+    -- TypeScript/JavaScript
+    "ts_ls",
+    "eslint",
   },
   automatic_enable = true,
 })
