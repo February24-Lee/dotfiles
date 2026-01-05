@@ -17,6 +17,8 @@ mason_lspconfig.setup({
     -- TypeScript/JavaScript
     "ts_ls",
     "eslint",
+    -- CSS/Tailwind
+    "tailwindcss",
   },
   automatic_enable = true,
 })
@@ -75,7 +77,23 @@ vim.lsp.config("ruff", {
   capabilities = capabilities,
   init_options = {
     settings = {
-      args = {}, 
+      args = {},
+    },
+  },
+})
+
+vim.lsp.config("tailwindcss", {
+  on_attach = on_attach,
+  capabilities = capabilities,
+  settings = {
+    tailwindCSS = {
+      experimental = {
+        classRegex = {
+          -- Support for clsx, classnames, cn() utility
+          { "clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)" },
+          { "cn\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)" },
+        },
+      },
     },
   },
 })

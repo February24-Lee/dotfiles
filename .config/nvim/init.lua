@@ -59,6 +59,20 @@ require("lazy").setup({
       end,
     },
 
+    -- 🌟 Next.js / React Development
+    {
+      "windwp/nvim-ts-autotag",
+      dependencies = { "nvim-treesitter/nvim-treesitter" },
+      config = function()
+        require("nvim-ts-autotag").setup({
+          filetypes = {
+            "html", "javascript", "typescript",
+            "javascriptreact", "typescriptreact"
+          }
+        })
+      end,
+    },
+
     -- 🌟 Auto-completion & Snippets
     "hrsh7th/nvim-cmp",
     "hrsh7th/cmp-nvim-lsp",
@@ -165,11 +179,12 @@ require("lazy").setup({
 })
 
 -- 🌟 Mason & LSP auto setup
--- 🌟 Linter & Formatter 
+-- 🌟 Linter & Formatter
 require("user.mason")
 require("user.lsp")
 require("user.none-ls")
 require("user.venv-selector")
+require("user.telescope")
 
 vim.api.nvim_create_autocmd("BufWritePre", {
   pattern = { "*.py" },
@@ -251,6 +266,10 @@ require("nvim-tree").setup({
     filters = {
         dotfiles = false,  -- Show dotfiles
         git_ignored = false,  -- Show git ignored files
+    },
+    update_focused_file = {
+        enable = true,
+        update_root = false,  -- Don't change root directory
     },
 })
 vim.keymap.set("n", "<leader>e", ":NvimTreeToggle<CR>", { noremap = true, silent = true })
