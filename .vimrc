@@ -21,6 +21,10 @@ Plug 'junegunn/fzf.vim'
 Plug 'junegunn/fzf', {'do': { -> fzf#install() } }
 Plug 'sheerun/vim-polyglot'
 Plug 'preservim/nerdtree'
+Plug 'preservim/tagbar'
+Plug 'vim-airline/vim-airline'
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
+Plug 'vim-autoformat/vim-autoformat'
 call plug#end()
 
 nnoremap <silent> <C-f> :Files<CR>
