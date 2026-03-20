@@ -1,12 +1,18 @@
-return {
-  {
-    "3rd/image.nvim",
-    ft = { "python", "markdown", "quarto", "rmd" },
-    opts = {
-      backend = "kitty",
-      integrations = {
-        markdown = { enabled = true },
-      },
-    },
-  },
-}
+-- image.nvim 비활성화 (문제 발생으로 주석처리)
+-- return {
+--   {
+--     "3rd/image.nvim",
+--     -- lazy loading 제거 - 항상 로드
+--     lazy = false,
+--     opts = {
+--       backend = "iterm2", -- iTerm2 inline images protocol
+--       integrations = {
+--         markdown = { enabled = true },
+--       },
+--       -- jpg 파일을 직접 열었을 때도 표시
+--       max_width = 100,
+--       max_height = 40,
+--     },
+--   },
+-- }
+return {}
