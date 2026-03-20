@@ -1,5 +1,5 @@
 --
-vim.g.python3_host_prog = vim.fn.expand("$HOME/miniconda/bin/python")
+vim.g.python3_host_prog = vim.fn.exepath("python3")
 
 -- Basic settings
 vim.lsp.log.set_level(vim.log.levels.DEBUG)
@@ -46,6 +46,16 @@ require("user.lsp")
 require("user.none-ls")
 require("user.venv-selector")
 require("user.telescope")
+
+-- JSON folding
+vim.api.nvim_create_autocmd("FileType", {
+    pattern = "json",
+    callback = function()
+        vim.opt_local.foldenable = true
+        vim.opt_local.foldmethod = "indent"
+        vim.opt_local.foldlevel = 99  -- 처음에는 모두 열림, zM으로 접기
+    end,
+})
 
 -- Python auto-format on save
 vim.api.nvim_create_autocmd("BufWritePre", {
