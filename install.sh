@@ -64,13 +64,17 @@ echo "📦 Installing essential packages..."
 if [[ "$PKG_MANAGER" == "brew" ]]; then
     brew install git vim fzf ripgrep fd
 elif [[ "$PKG_MANAGER" == "apt-get" ]]; then
-    $SUDO apt-get update && $SUDO apt-get install -y git vim fzf ripgrep fd-find
+    # Git PPA for latest version (needed for lazygit etc.)
+    if $SUDO apt-get install -y software-properties-common 2>/dev/null; then
+        $SUDO add-apt-repository -y ppa:git-core/ppa 2>/dev/null || true
+    fi
+    $SUDO apt-get update && $SUDO apt-get install -y git vim fzf ripgrep fd-find unzip
     mkdir -p ~/.local/bin
     ln -sf $(which fdfind) ~/.local/bin/fd  # Ubuntu에서는 fdfind로 설치되므로 fd로 링크
 elif [[ "$PKG_MANAGER" == "yum" || "$PKG_MANAGER" == "dnf" ]]; then
-    $SUDO $PKG_MANAGER install -y git vim fzf ripgrep fd-find
+    $SUDO $PKG_MANAGER install -y git vim fzf ripgrep fd-find unzip
 elif [[ "$PKG_MANAGER" == "pacman" ]]; then
-    $SUDO pacman -S --noconfirm git vim fzf ripgrep fd
+    $SUDO pacman -S --noconfirm git vim fzf ripgrep fd unzip
 else
     echo "❌ Unsupported package manager. Skipping fd installation."
 fi
@@ -95,6 +99,49 @@ echo "🔍 Checking Node.js and npm versions..."
 node -v
 npm -v
 
+# Step: Install uv (Python package manager)
+echo "📦 Installing uv..."
+if command -v uv &>/dev/null; then
+    echo "✅ uv is already installed."
+else
+    case "$PKG_MANAGER" in
+        brew)    brew install uv ;;
+        *)       curl -LsSf https://astral.sh/uv/install.sh | sh ;;
+    esac
+fi
+
+# Step: Install lazygit
+echo "📦 Installing lazygit..."
+if command -v lazygit &>/dev/null; then
+    echo "✅ lazygit is already installed."
+else
+    case "$PKG_MANAGER" in
+        brew) brew install lazygit ;;
+        *)
+            LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": "v\K[^"]*')
+            ARCH="$(uname -m)"
+            case "$ARCH" in
+                x86_64|amd64)  LAZYGIT_ARCH="Linux_x86_64" ;;
+                aarch64|arm64) LAZYGIT_ARCH="Linux_arm64" ;;
+                *) echo "❌ Unsupported architecture for lazygit: $ARCH"; LAZYGIT_ARCH="" ;;
+            esac
+            if [ -n "$LAZYGIT_ARCH" ]; then
+                curl -fLo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_${LAZYGIT_ARCH}.tar.gz"
+                tar xf /tmp/lazygit.tar.gz -C /tmp lazygit
+                mkdir -p "$HOME/.local/bin"
+                mv /tmp/lazygit "$HOME/.local/bin/"
+                rm -f /tmp/lazygit.tar.gz
+            fi ;;
+    esac
+fi
+
+# Step: Install Claude Code
+echo "📦 Installing Claude Code..."
+if command -v claude &>/dev/null; then
+    echo "✅ Claude Code is already installed."
+else
+    npm install -g @anthropic-ai/claude-code
+fi
 
 # Step 4: Install Oh My Zsh
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
@@ -165,7 +212,20 @@ else
 fi
 
 echo ""
-echo "✅ Base environment setup finished."
+echo "============================================"
+echo "  Installation Summary"
+echo "============================================"
+printf "  %-20s %s\n" "Tool" "Status"
+echo "--------------------------------------------"
+for tool in zsh git vim fzf rg fd node npm uv lazygit claude; do
+    if command -v "$tool" &>/dev/null; then
+        version=$("$tool" --version 2>/dev/null | head -1) || version="installed"
+        printf "  %-20s ✅ %s\n" "$tool" "$version"
+    else
+        printf "  %-20s ❌ not found\n" "$tool"
+    fi
+done
+echo "============================================"
 echo ""
 echo "➡️  If you also want to install or update Neovim, run:"
 echo "    ./install_nvim.sh --pkg      # Install via package manager (default)"
