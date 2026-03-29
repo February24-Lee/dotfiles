@@ -76,3 +76,4 @@ fi
 
 autoload -U compinit
 compinit -i
+export PATH="$HOME/.local/bin:$PATH"
