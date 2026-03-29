@@ -228,5 +228,30 @@ else
   esac
 fi
 
-echo "✅ Done."
-command -v nvim >/dev/null 2>&1 && nvim --version | head -n1 || echo "⚠️ nvim not found in PATH"
+echo ""
+echo "============================================"
+echo "  Neovim Setup Summary"
+echo "============================================"
+printf "  %-20s %s\n" "Component" "Status"
+echo "--------------------------------------------"
+for tool in nvim fd ruff; do
+    if command -v "$tool" &>/dev/null; then
+        version=$("$tool" --version 2>/dev/null | head -1) || version="installed"
+        printf "  %-20s ✅ %s\n" "$tool" "$version"
+    else
+        printf "  %-20s ❌ not found\n" "$tool"
+    fi
+done
+# Check Lazy.nvim
+if [ -d "$HOME/.local/share/nvim/lazy/lazy.nvim" ]; then
+    printf "  %-20s ✅ installed\n" "lazy.nvim"
+else
+    printf "  %-20s ❌ not found\n" "lazy.nvim"
+fi
+# Check nvim config symlink
+if [ -L "$HOME/.config/nvim" ]; then
+    printf "  %-20s ✅ linked\n" "nvim config"
+else
+    printf "  %-20s ❌ not linked\n" "nvim config"
+fi
+echo "============================================"
