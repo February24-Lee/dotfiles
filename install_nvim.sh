@@ -215,5 +215,18 @@ else
   fi
 fi
 
+# Install ruff (Python linter/formatter for LSP)
+echo "📦 Installing ruff..."
+if command -v ruff &>/dev/null; then
+  echo "✅ ruff already installed"
+else
+  case "$PKG_MANAGER" in
+    brew)    brew install ruff ;;
+    apt-get) curl -LsSf https://astral.sh/ruff/install.sh | sh ;;
+    dnf|yum) curl -LsSf https://astral.sh/ruff/install.sh | sh ;;
+    pacman)  $SUDO pacman -S --noconfirm ruff ;;
+  esac
+fi
+
 echo "✅ Done."
 command -v nvim >/dev/null 2>&1 && nvim --version | head -n1 || echo "⚠️ nvim not found in PATH"
