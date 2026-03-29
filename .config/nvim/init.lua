@@ -2,7 +2,7 @@
 vim.g.python3_host_prog = vim.fn.exepath("python3")
 
 -- Basic settings
-vim.lsp.log.set_level(vim.log.levels.DEBUG)
+vim.lsp.log.set_level(vim.log.levels.WARN)
 vim.opt.number = true
 vim.opt.relativenumber = true
 vim.opt.tabstop = 4
@@ -13,6 +13,19 @@ vim.opt.smartcase = true
 vim.opt.hidden = true
 vim.opt.wrapscan = true
 vim.opt.syntax = "on"
+
+-- OSC 52 clipboard (works over SSH + tmux → local clipboard)
+vim.g.clipboard = {
+    name = "OSC 52",
+    copy = {
+        ["+"] = require("vim.ui.clipboard.osc52").copy("+"),
+        ["*"] = require("vim.ui.clipboard.osc52").copy("*"),
+    },
+    paste = {
+        ["+"] = require("vim.ui.clipboard.osc52").paste("+"),
+        ["*"] = require("vim.ui.clipboard.osc52").paste("*"),
+    },
+}
 
 -- Transparent background
 vim.cmd [[
@@ -105,3 +118,6 @@ vim.keymap.set("n", "<leader>md", ":MoltenDelete<CR>", { desc = "Delete Molten C
 
 -- Image preview with viu
 vim.keymap.set("n", "<leader>ip", ":!viu -w 80 %<CR>", { desc = "Preview Image" })
+
+-- System clipboard yank
+vim.keymap.set({"n", "v"}, "<leader>y", '"+y', { desc = "Copy to system clipboard" })
