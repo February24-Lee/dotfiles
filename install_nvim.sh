@@ -228,13 +228,54 @@ else
   esac
 fi
 
+# Install tree-sitter CLI (required by nvim-treesitter `main` branch to compile parsers)
+echo "📦 Installing tree-sitter CLI..."
+if command -v tree-sitter &>/dev/null; then
+  echo "✅ tree-sitter CLI already installed"
+else
+  case "$PKG_MANAGER" in
+    brew)   brew install tree-sitter-cli ;;
+    pacman) $SUDO pacman -S --noconfirm tree-sitter-cli 2>/dev/null || $SUDO pacman -S --noconfirm tree-sitter ;;
+    *)
+      # apt/dnf/yum don't reliably ship the CLI; use npm (node is installed by install.sh)
+      if command -v npm &>/dev/null; then
+        npm install -g tree-sitter-cli
+      else
+        echo "⚠️ npm not found; install tree-sitter CLI manually (e.g. cargo install tree-sitter-cli)."
+      fi ;;
+  esac
+fi
+
+# Set up Neovim Python provider venv with pynvim (needed for molten/Jupyter + python3 provider)
+echo "📦 Setting up Neovim Python provider (pynvim)..."
+NVIM_VENV="$HOME/.venvs/neovim"
+if [ -x "$NVIM_VENV/bin/python3" ] && "$NVIM_VENV/bin/python3" -c 'import pynvim' &>/dev/null; then
+  echo "✅ pynvim venv already set up"
+else
+  if command -v uv &>/dev/null; then
+    uv venv "$NVIM_VENV"
+    uv pip install --python "$NVIM_VENV/bin/python" pynvim jupyter_client
+  elif command -v python3 &>/dev/null; then
+    python3 -m venv "$NVIM_VENV"
+    "$NVIM_VENV/bin/python" -m pip install --upgrade pip pynvim jupyter_client
+  else
+    echo "⚠️ Neither uv nor python3 found; skipping pynvim (molten/Jupyter unavailable)."
+  fi
+fi
+
+# Node provider for Neovim (silences :checkhealth node warning)
+if command -v npm &>/dev/null && ! npm ls -g neovim &>/dev/null; then
+  echo "📦 Installing Neovim node provider..."
+  npm install -g neovim
+fi
+
 echo ""
 echo "============================================"
 echo "  Neovim Setup Summary"
 echo "============================================"
 printf "  %-20s %s\n" "Component" "Status"
 echo "--------------------------------------------"
-for tool in nvim fd ruff; do
+for tool in nvim tree-sitter fd ruff; do
     if command -v "$tool" &>/dev/null; then
         version=$("$tool" --version 2>/dev/null | head -1) || version="installed"
         printf "  %-20s ✅ %s\n" "$tool" "$version"
@@ -253,5 +294,11 @@ if [ -L "$HOME/.config/nvim" ]; then
     printf "  %-20s ✅ linked\n" "nvim config"
 else
     printf "  %-20s ❌ not linked\n" "nvim config"
+fi
+# Check pynvim venv (Python provider for molten/Jupyter)
+if [ -x "$HOME/.venvs/neovim/bin/python3" ] && "$HOME/.venvs/neovim/bin/python3" -c 'import pynvim' &>/dev/null; then
+    printf "  %-20s ✅ installed\n" "pynvim venv"
+else
+    printf "  %-20s ❌ not found\n" "pynvim venv"
 fi
 echo "============================================"
