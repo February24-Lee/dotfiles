@@ -1,5 +1,8 @@
 --
-vim.g.python3_host_prog = vim.fn.exepath("python3")
+-- Python provider: prefer the dedicated venv with pynvim (needed for molten/Jupyter),
+-- fall back to the system python3 on machines where the venv isn't set up.
+local nvim_py = vim.fn.expand("~/.venvs/neovim/bin/python3")
+vim.g.python3_host_prog = vim.fn.executable(nvim_py) == 1 and nvim_py or vim.fn.exepath("python3")
 
 -- Basic settings
 vim.lsp.log.set_level(vim.log.levels.WARN)
