@@ -30,13 +30,7 @@ vim.g.clipboard = {
     },
 }
 
--- Transparent background
-vim.cmd [[
-    highlight Normal guibg=NONE ctermbg=NONE
-    highlight NonText guibg=NONE ctermbg=NONE
-    highlight Folded guibg=NONE ctermbg=NONE
-    highlight EndOfBuffer guibg=NONE ctermbg=NONE
-]]
+-- Transparent background is handled by the colorscheme (tokyonight transparent option)
 
 -- Ensure Lazy.nvim is installed
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
