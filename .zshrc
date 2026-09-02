@@ -12,6 +12,9 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # Plugins (Avoid duplicate entries)
 plugins=(git zsh-autosuggestions zsh-syntax-highlighting autojump)
 
+# User completions (must precede oh-my-zsh's compinit)
+fpath=("$HOME/.zsh/completions" $fpath)
+
 source $ZSH/oh-my-zsh.sh
 
 # Ensure Powerlevel10k settings are loaded
@@ -77,3 +80,6 @@ fi
 autoload -U compinit
 compinit -i
 export PATH="$HOME/.local/bin:$PATH"
+
+test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+
