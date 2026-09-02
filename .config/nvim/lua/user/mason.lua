@@ -7,7 +7,10 @@ mason_lspconfig.setup({
   ensure_installed = {
     -- Python
     "pyright",
-    "ruff",
+    -- NOTE: ruff is installed outside mason (`uv tool install ruff`). Mason's
+    -- installer needs `python3 -m venv` + pip, which Ubuntu splits into the
+    -- python3-venv/python3-pip packages; without them every startup retried
+    -- and failed. It is enabled by hand in user/lsp/python.lua instead.
     -- Lua
     "lua_ls",
     -- Shell

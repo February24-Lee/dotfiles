@@ -8,8 +8,7 @@ pcall(function()
       -- Shell
       "shfmt",
       "shellcheck",
-      -- Python
-      "ruff",
+      -- Python: ruff comes from `uv tool install ruff`, not mason (see user/mason.lua)
       -- Web (JS/TS/CSS/HTML)
       "prettier",
       "eslint_d",
