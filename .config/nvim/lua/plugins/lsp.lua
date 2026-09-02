@@ -28,6 +28,22 @@ return {
       if #to_install > 0 then
         require("nvim-treesitter").install(to_install)
       end
+
+      -- The `main` branch no longer wires up highlighting; Neovim only starts it
+      -- from its bundled ftplugins (lua, vim, markdown, ...). Start it ourselves
+      -- for any filetype whose parser actually loads, so the parsers above get used.
+      vim.api.nvim_create_autocmd("FileType", {
+        group = vim.api.nvim_create_augroup("user_treesitter_start", { clear = true }),
+        callback = function(ev)
+          if vim.treesitter.highlighter.active[ev.buf] then
+            return
+          end
+          local lang = vim.treesitter.language.get_lang(ev.match)
+          if lang and vim.treesitter.language.add(lang) then
+            pcall(vim.treesitter.start, ev.buf, lang)
+          end
+        end,
+      })
     end,
   },
 
